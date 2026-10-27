@@ -44,6 +44,30 @@ services:
     expose:
       - "8025"
 
+  mcp:
+    build:
+      context: .
+      dockerfile: ./mcp_server/Dockerfile
+    ports:
+      - "8001:8001"
+    environment:
+      - PORTAL_URL=http://app:8000
+      - PUBLIC_BASE_URL=${PUBLIC_BASE_URL:-http://localhost:8000}
+      - PGHOST=db
+      - PGPORT=5432
+      - PGDATABASE=sewasetu
+      - PGUSER=sewasetu
+      - PGPASSWORD=sewasetu123
+      - SMS_GATEWAY_URL=http://smsgw:8025
+      - UPLOAD_DIR=/var/sewasetu/uploads
+      - AUTH_REQUIRED=true
+    depends_on:
+      - db
+      - app
+      - smsgw
+    volumes:
+      - uploads:/var/sewasetu/uploads
+
 volumes:
   pgdata:
   uploads:

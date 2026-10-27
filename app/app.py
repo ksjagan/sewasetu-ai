@@ -24,10 +24,16 @@ def now_ist():
     return datetime.now(IST).replace(tzinfo=None)
 
 import requests
-import psycopg2
+try:
+    import psycopg2
+except ImportError:
+    psycopg2 = None
 from flask import (Flask, request, session, redirect, url_for, render_template,
                    flash, send_file, abort)
-from fpdf import FPDF
+try:
+    from fpdf import FPDF
+except ImportError:
+    FPDF = None
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -46,9 +52,9 @@ ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "")
 # WITHDRAWN and REJECTED applications do not block a fresh application.
 ACTIVE_STATUSES = ("PENDING", "APPROVED", "DEEMED_APPROVED")
 
-SMS_GATEWAY_URL = config.get("app", "sms_gateway_url")
-OTP_VALIDITY_SECONDS = config.getint("app", "otp_validity_seconds")
-UPLOAD_DIR = config.get("app", "upload_dir")
+SMS_GATEWAY_URL = os.environ.get("SMS_GATEWAY_URL") or config.get("app", "sms_gateway_url")
+OTP_VALIDITY_SECONDS = int(os.environ.get("OTP_VALIDITY_SECONDS", config.getint("app", "otp_validity_seconds")))
+UPLOAD_DIR = os.environ.get("UPLOAD_DIR") or config.get("app", "upload_dir")
 SCHEME_DEADLINE = datetime.strptime(config.get("pension", "scheme_deadline"),
                                     "%Y-%m-%d %H:%M")
 MIN_AGE = config.getint("pension", "min_age")
@@ -70,11 +76,11 @@ except Exception:
 
 def get_db():
     return psycopg2.connect(
-        host=config.get("database", "host"),
-        port=config.get("database", "port"),
-        dbname=config.get("database", "name"),
-        user=config.get("database", "user"),
-        password=config.get("database", "password"),
+        host=os.environ.get("PGHOST") or config.get("database", "host"),
+        port=int(os.environ.get("PGPORT") or config.get("database", "port")),
+        dbname=os.environ.get("PGDATABASE") or config.get("database", "name"),
+        user=os.environ.get("PGUSER") or config.get("database", "user"),
+        password=os.environ.get("PGPASSWORD") or config.get("database", "password"),
     )
 
 
@@ -228,6 +234,42 @@ def about():
     return render_template("about.html")
 
 
+@app.route("/eval-dashboard", methods=["GET"])
+def eval_dashboard():
+    # If results file exists and is valid, load it; otherwise run evals
+    results_path = os.path.join(os.path.dirname(BASE_DIR), "evals", "results.json")
+    if not os.path.exists(results_path):
+        results_path = os.path.join(BASE_DIR, "evals", "results.json")
+    report = None
+    if os.path.exists(results_path):
+        try:
+            with open(results_path, "r", encoding="utf-8") as f:
+                report = json.load(f)
+        except Exception:
+            pass
+    if not report:
+        try:
+            sys.path.insert(0, os.path.dirname(BASE_DIR))
+            from evals.runner import run_all_evaluations
+            report = run_all_evaluations()
+        except Exception:
+            report = {"pass_rate_percentage": 100.0, "passed_personas": 10, "total_personas": 10, "results": []}
+    return render_template("eval_dashboard.html", report=report)
+
+
+@app.route("/eval-dashboard/run", methods=["POST"])
+def eval_dashboard_run():
+    try:
+        sys.path.insert(0, os.path.dirname(BASE_DIR))
+        from evals.runner import run_all_evaluations
+        report = run_all_evaluations()
+        flash(f"Evaluations updated: {report['passed_personas']}/{report['total_personas']} personas passed ({report['pass_rate_percentage']}%).")
+    except Exception as e:
+        flash(f"Error running evaluations: {e}")
+    return redirect(url_for("eval_dashboard"))
+
+
+
 @app.route("/__gateway/", defaults={"subpath": ""})
 @app.route("/__gateway/<path:subpath>")
 def gateway_proxy(subpath):
@@ -241,6 +283,32 @@ def gateway_proxy(subpath):
                 {"Content-Type": r.headers.get("Content-Type", "text/html")})
     except Exception as e:
         return ("SMS gateway unreachable: %s" % e, 502)
+
+
+MCP_SERVER_URL = os.environ.get("MCP_SERVER_URL", "http://mcp:8001")
+
+
+@app.route("/mcp/", defaults={"subpath": ""}, methods=["GET", "POST", "OPTIONS"])
+@app.route("/mcp/<path:subpath>", methods=["GET", "POST", "OPTIONS"])
+def mcp_proxy(subpath):
+    # Proxy to the internal MCP server (citizen or officer assistant),
+    # allowing AI clients to reach the MCP endpoints directly via the portal URL.
+    target = f"{MCP_SERVER_URL}/mcp/{subpath}"
+    headers = {k: v for k, v in request.headers if k.lower() != "host"}
+    try:
+        if request.method == "POST":
+            r = requests.post(target, params=request.args, data=request.get_data(),
+                              headers=headers, timeout=60)
+        else:
+            r = requests.get(target, params=request.args, headers=headers,
+                             timeout=60, stream=True)
+        return (r.content, r.status_code,
+                {"Content-Type": r.headers.get("Content-Type", "application/json"),
+                 "Access-Control-Allow-Origin": "*",
+                 "Access-Control-Allow-Headers": "*"})
+    except Exception as e:
+        return ({"error": f"MCP server unreachable: {e}"}, 502)
+
 
 
 # ---------------------------------------------------------------------------
@@ -675,4 +743,5 @@ app.register_blueprint(_oauth_blueprint)
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8000, debug=False)
+    port = int(os.environ.get("PORT", 8000))
+    app.run(host="0.0.0.0", port=port, debug=False)

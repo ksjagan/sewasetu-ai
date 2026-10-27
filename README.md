@@ -81,3 +81,32 @@ portal, checks `aud` is its own canonical URL, and reads `scope`, `role` and `su
 
 Long-lived **program tokens** for unattended use (role officer) are issued by an
 administrator at `/admin/tokens`.
+
+## Model Context Protocol (MCP) Endpoints
+
+Sewa Setu provides two distinct MCP servers over streamable HTTP / Server-Sent Events (SSE):
+
+- **Citizen Assistant**:
+  - Direct Streamable HTTP: `http://localhost:8000/mcp/citizen` (or `:8001/mcp/citizen`)
+  - SSE Stream: `http://localhost:8000/mcp/citizen/sse`
+  - Required Scope: `citizen` (JWT session capped at 2 hours)
+  - Capabilities: Scheme rules, eligibility check, OTP flow, form submission, status inquiry, application withdrawal.
+  - Officer tools are strictly hidden and forbidden.
+
+- **Block Officer Assistant**:
+  - Direct Streamable HTTP: `http://localhost:8000/mcp/officer` (or `:8001/mcp/officer`)
+  - SSE Stream: `http://localhost:8000/mcp/officer/sse`
+  - Required Scope: `officer` (JWT session capped at 8 hours or long-lived program token)
+  - Capabilities: Dashboard summary, pending queue sorted by 15-day SLA urgency, applicant dossier, document inspection, audit-backed approve/reject decisions.
+  - Citizen tools are strictly hidden.
+
+### Connecting Claude Code
+
+```bash
+# Citizen Assistant
+claude mcp add sewasetu-citizen -- http://localhost:8000/mcp/citizen
+
+# Officer Assistant
+claude mcp add sewasetu-officer -- http://localhost:8000/mcp/officer
+```
+
