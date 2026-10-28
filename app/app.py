@@ -8,6 +8,7 @@ Maintained in-house since 02/2026.
 """
 
 import os
+import sys
 import io
 import re
 import random
