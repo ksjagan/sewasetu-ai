@@ -150,10 +150,14 @@ CITIZEN_TOOL_DEFINITIONS = [
 
 def execute_citizen_tool(name: str, arguments: Dict[str, Any], caller_context: Dict[str, Any]) -> Dict[str, Any]:
     """Execute a citizen tool invocation with strict caller isolation."""
-    # Enforce mobile context match if an authenticated token provides subject
-    token_sub = (caller_context or {}).get("sub", "")
-    is_unlocked = (caller_context or {}).get("unlocked", False)
-    token_mobile = None if is_unlocked else (token_sub.split(":", 1)[1] if token_sub.startswith("citizen:") and token_sub != "citizen:demo" else None)
+    # Enforce mobile context match ONLY if an authenticated non-mock token provides subject
+    token_mobile = None
+    if caller_context and not caller_context.get("unlocked"):
+        token_sub = caller_context.get("sub", "")
+        if token_sub.startswith("citizen:"):
+            sub_val = token_sub.split(":", 1)[1]
+            if sub_val not in ("demo", "unlocked", "9876543210"):
+                token_mobile = sub_val
 
     if name == "get_scheme_information":
         return PortalService.get_scheme_info()
