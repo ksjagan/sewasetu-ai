@@ -12,8 +12,16 @@ import time
 from datetime import datetime
 from typing import Dict, Any, List
 
-# Ensure app path
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# Locate project root (the directory containing mcp_server and app)
+current = os.path.dirname(os.path.abspath(__file__))
+while current and current != os.path.dirname(current):
+    if os.path.exists(os.path.join(current, "mcp_server")):
+        BASE_DIR = current
+        break
+    current = os.path.dirname(current)
+else:
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 app_dir = os.path.join(BASE_DIR, "app")

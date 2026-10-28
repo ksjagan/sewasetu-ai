@@ -77,6 +77,8 @@ except Exception:
 
 
 def get_db():
+    if psycopg2 is None:
+        raise RuntimeError("psycopg2 is not installed or available.")
     return psycopg2.connect(
         host=os.environ.get("PGHOST") or config.get("database", "host"),
         port=int(os.environ.get("PGPORT") or config.get("database", "port")),
@@ -322,7 +324,8 @@ def mcp_proxy(subpath):
                  "Access-Control-Allow-Origin": "*",
                  "Access-Control-Allow-Headers": "*"})
     except Exception as e:
-        return ({"error": f"MCP server unreachable: {e}"}, 502)
+        return (json.dumps({"error": f"MCP server unreachable: {e}"}), 502,
+                {"Content-Type": "application/json", "Access-Control-Allow-Origin": "*"})
 
 
 
@@ -488,6 +491,8 @@ def handle_submission():
 
 
 def generate_acknowledgment(cur, app_id):
+    if FPDF is None:
+        raise RuntimeError("fpdf is not installed or available.")
     cur.execute("SELECT application_no, applicant_name, mobile, dob, village, block, "
                 "bank_account, ifsc, submitted_at, status FROM applications WHERE id = %s",
                 (app_id,))

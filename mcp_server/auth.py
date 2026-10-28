@@ -102,20 +102,23 @@ def decode_and_verify_token(token: str, expected_role: Optional[str] = None) -> 
     if claims.get("exp", 0) < now:
         return False, None, "Token has expired."
 
-    # 3. Check cryptographic signature if PyJWT is installed
+    # 3. Check cryptographic signature if PyJWT is installed and JWKS is active
     kid = header.get("kid")
     keys = fetch_jwks()
-    if jwt and kid and kid in keys and RSAAlgorithm:
-        try:
-            pub_key = keys[kid]
-            verified_claims = jwt.decode(
-                token,
-                pub_key,
-                algorithms=["RS256"],
-                options={"verify_aud": False}
-            )
-            claims = verified_claims
-        except jwt.PyJWTError as e:
-            return False, None, f"Cryptographic token verification failed: {str(e)}"
+    if jwt and kid and RSAAlgorithm and keys:
+        if kid in keys:
+            try:
+                pub_key = keys[kid]
+                verified_claims = jwt.decode(
+                    token,
+                    pub_key,
+                    algorithms=["RS256"],
+                    options={"verify_aud": False}
+                )
+                claims = verified_claims
+            except Exception as e:
+                return False, None, f"Cryptographic token verification failed: {str(e)}"
+        elif AUTH_REQUIRED:
+            return False, None, f"Unknown key ID '{kid}' in active JWKS."
 
     return True, claims, ""

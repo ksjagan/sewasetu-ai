@@ -93,9 +93,8 @@ class MCPHandler:
             try:
                 result = self.executor(tool_name, arguments, caller_context)
                 is_error = False
-                if isinstance(result, dict) and (result.get("success") is False or result.get("verified") is False or "error" in result):
-                    # Flag business rejection or error
-                    is_error = "error" in result or "errors" in result
+                if isinstance(result, dict) and (result.get("success") is False or result.get("verified") is False or "error" in result or "errors" in result):
+                    is_error = bool("error" in result or "errors" in result or result.get("success") is False)
 
                 formatted_text = json.dumps(result, indent=2, ensure_ascii=False) if isinstance(result, (dict, list)) else str(result)
                 return {

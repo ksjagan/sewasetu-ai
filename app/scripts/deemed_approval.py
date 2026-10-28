@@ -65,6 +65,7 @@ def main():
           % (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), len(rows)))
     cur.close()
     conn.close()
+    return 0
 
 
 if __name__ == "__main__":

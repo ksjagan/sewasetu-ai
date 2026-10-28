@@ -263,19 +263,35 @@ async def root_discovery(request: Request) -> Response:
     })
 
 
+async def citizen_endpoint(request: Request) -> Response:
+    """Unified handler for /mcp/citizen supporting both HTTP POST (JSON-RPC) and GET (SSE)."""
+    if request.method == "POST":
+        return await citizen_http_post(request)
+    elif request.method == "GET":
+        return await citizen_sse(request)
+    return Response(status_code=405)
+
+
+async def officer_endpoint(request: Request) -> Response:
+    """Unified handler for /mcp/officer supporting both HTTP POST (JSON-RPC) and GET (SSE)."""
+    if request.method == "POST":
+        return await officer_http_post(request)
+    elif request.method == "GET":
+        return await officer_sse(request)
+    return Response(status_code=405)
+
+
 routes = [
     Route("/", root_discovery, methods=["GET"]),
     Route("/health", health, methods=["GET"]),
     
     # Citizen routes
-    Route("/mcp/citizen", citizen_http_post, methods=["POST"]),
-    Route("/mcp/citizen", citizen_sse, methods=["GET"]),
+    Route("/mcp/citizen", citizen_endpoint, methods=["GET", "POST"]),
     Route("/mcp/citizen/sse", citizen_sse, methods=["GET"]),
     Route("/mcp/citizen/messages", citizen_message_post, methods=["POST"]),
 
     # Officer routes
-    Route("/mcp/officer", officer_http_post, methods=["POST"]),
-    Route("/mcp/officer", officer_sse, methods=["GET"]),
+    Route("/mcp/officer", officer_endpoint, methods=["GET", "POST"]),
     Route("/mcp/officer/sse", officer_sse, methods=["GET"]),
     Route("/mcp/officer/messages", officer_message_post, methods=["POST"]),
 ]
@@ -286,7 +302,7 @@ app = Starlette(routes=routes)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
