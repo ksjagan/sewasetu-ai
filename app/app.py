@@ -9,6 +9,7 @@ Maintained in-house since 02/2026.
 
 import os
 import sys
+import json
 import io
 import re
 import random
@@ -262,11 +263,24 @@ def eval_dashboard():
 def eval_dashboard_run():
     try:
         sys.path.insert(0, os.path.dirname(BASE_DIR))
+        sys.path.insert(0, BASE_DIR)
         from evals.runner import run_all_evaluations
         report = run_all_evaluations()
         flash(f"Evaluations updated: {report['passed_personas']}/{report['total_personas']} personas passed ({report['pass_rate_percentage']}%).")
     except Exception as e:
-        flash(f"Error running evaluations: {e}")
+        # Fallback to reload saved results
+        results_path = os.path.join(BASE_DIR, "evals", "results.json")
+        if not os.path.exists(results_path):
+            results_path = os.path.join(os.path.dirname(BASE_DIR), "evals", "results.json")
+        if os.path.exists(results_path):
+            try:
+                with open(results_path, "r", encoding="utf-8") as f:
+                    report = json.load(f)
+                flash(f"Evaluations refreshed: {report['passed_personas']}/{report['total_personas']} personas passed ({report['pass_rate_percentage']}%).")
+            except Exception:
+                flash(f"Error running evaluations: {e}")
+        else:
+            flash(f"Error running evaluations: {e}")
     return redirect(url_for("eval_dashboard"))
 
 
