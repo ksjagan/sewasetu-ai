@@ -71,12 +71,14 @@ def decode_and_verify_token(token: str, expected_role: Optional[str] = None) -> 
     if not token:
         if not AUTH_REQUIRED:
             # Fallback for dev / unauthenticated testing when AUTH_REQUIRED=false
-            mock_sub = "officer:admin" if expected_role == "officer" else "citizen:9876543210"
+            # Marked as unlocked so interactive testers can use any mobile number
+            mock_sub = "officer:admin" if expected_role == "officer" else "citizen:demo"
             return True, {
                 "sub": mock_sub,
                 "role": expected_role or "citizen",
                 "scope": expected_role or "citizen",
                 "client_id": "test_client",
+                "unlocked": True,
                 "exp": int(time.time()) + 3600
             }, ""
         return False, None, "Missing authorization token."

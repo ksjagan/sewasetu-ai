@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-10-28T11:32:44.044648",
+  "timestamp": "2026-10-28T17:38:43.163289",
   "total_personas": 10,
   "passed_personas": 10,
   "failed_personas": 0,
@@ -58,7 +58,7 @@
           "passed": true
         },
         {
-          "assertion": "Application SSP26252998 inserted in database with PENDING status",
+          "assertion": "Application SSP26517039 inserted in database with PENDING status",
           "passed": true
         },
         {
@@ -66,7 +66,7 @@
           "passed": true
         }
       ],
-      "latency_ms": 18.12
+      "latency_ms": 17.15
     },
     {
       "id": "persona_2",
@@ -124,7 +124,7 @@
           "passed": true
         }
       ],
-      "latency_ms": 0.06
+      "latency_ms": 0.07
     },
     {
       "id": "persona_4",
@@ -165,7 +165,7 @@
           "passed": true
         }
       ],
-      "latency_ms": 5.79
+      "latency_ms": 5.03
     },
     {
       "id": "persona_5",
@@ -227,7 +227,7 @@
           "passed": true
         }
       ],
-      "latency_ms": 4.38
+      "latency_ms": 4.94
     },
     {
       "id": "persona_7",
@@ -264,7 +264,7 @@
           "passed": true
         }
       ],
-      "latency_ms": 4.33
+      "latency_ms": 4.17
     },
     {
       "id": "persona_8",
