@@ -319,6 +319,24 @@ def mcp_proxy(subpath):
         else:
             r = requests.get(target, params=request.args, headers=headers,
                              timeout=60, stream=True)
+            if "text/event-stream" in r.headers.get("Content-Type", ""):
+                from flask import Response
+                def generate():
+                    for chunk in r.iter_content(chunk_size=None):
+                        if chunk:
+                            yield chunk
+                return Response(
+                    generate(),
+                    status=r.status_code,
+                    content_type="text/event-stream",
+                    headers={
+                        "Cache-Control": "no-cache",
+                        "Connection": "keep-alive",
+                        "X-Accel-Buffering": "no",
+                        "Access-Control-Allow-Origin": "*",
+                        "Access-Control-Allow-Headers": "*",
+                    }
+                )
         return (r.content, r.status_code,
                 {"Content-Type": r.headers.get("Content-Type", "application/json"),
                  "Access-Control-Allow-Origin": "*",

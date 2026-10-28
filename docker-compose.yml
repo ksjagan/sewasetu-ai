@@ -60,7 +60,7 @@ services:
       - PGPASSWORD=sewasetu123
       - SMS_GATEWAY_URL=http://smsgw:8025
       - UPLOAD_DIR=/var/sewasetu/uploads
-      - AUTH_REQUIRED=true
+      - AUTH_REQUIRED=false
     depends_on:
       - db
       - app

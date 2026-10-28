@@ -23,7 +23,7 @@ import requests
 PORTAL_URL = os.environ.get("PORTAL_URL", "http://app:8000").rstrip("/")
 ISSUER = os.environ.get("PUBLIC_BASE_URL", "http://localhost:8000").rstrip("/")
 JWKS_URL = os.environ.get("JWKS_URL", f"{PORTAL_URL}/.well-known/jwks.json")
-AUTH_REQUIRED = os.environ.get("AUTH_REQUIRED", "true").lower() in ("true", "1", "yes")
+AUTH_REQUIRED = os.environ.get("AUTH_REQUIRED", "false").lower() in ("true", "1", "yes")
 
 _JWKS_CACHE: Dict[str, Any] = {"keys": {}, "last_fetched": 0}
 JWKS_CACHE_TTL = 3600  # 1 hour
